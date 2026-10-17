@@ -1,0 +1,50 @@
+# Builds Citadel v0.6.1 for Windows on GitHub's servers.
+# Put this file at:  .github/workflows/build-citadel-windows.yml
+# Then: Actions tab -> "Build Citadel for Windows" -> Run workflow.
+# The installer appears under "Artifacts" at the bottom of the finished run.
+
+name: Build Citadel for Windows
+
+on:
+  workflow_dispatch:   # lets you start it with a button
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      # Download the official Citadel source code (stable release v0.6.1).
+      # To build a different version, change the ref below.
+      - name: Get Citadel source
+        uses: actions/checkout@v4
+        with:
+          repository: everydaythingssoftware/citadel
+          ref: v0.6.1
+          path: citadel
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Rust
+        shell: bash
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Install app packages
+        working-directory: citadel
+        run: bun install
+
+      # Rust version pinned by the project is picked up automatically
+      # from rust-toolchain.toml inside the citadel folder.
+      - name: Build the app
+        working-directory: citadel
+        run: bunx tauri build
+
+      - name: Upload Windows installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: Citadel-Windows-installer
+          if-no-files-found: error
+          path: |
+            citadel/target/release/bundle/nsis/*.exe
+            citadel/target/release/bundle/msi/*.msi
+            citadel/src-tauri/target/release/bundle/nsis/*.exe
+            citadel/src-tauri/target/release/bundle/msi/*.msi
