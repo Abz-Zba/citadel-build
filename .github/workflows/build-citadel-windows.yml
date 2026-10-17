@@ -32,6 +32,13 @@ jobs:
         working-directory: citadel
         run: bun install
 
+      # Fix for "cannot open input file 'sqlite3.lib'":
+      # Windows has no SQLite library installed, so we tell the build to
+      # compile its own copy (same version the project already uses).
+      - name: Bundle SQLite into the build
+        working-directory: citadel/src-tauri
+        run: cargo add libsqlite3-sys@0.30.1 --features bundled
+
       # Rust version pinned by the project is picked up automatically
       # from rust-toolchain.toml inside the citadel folder.
       - name: Build the app
